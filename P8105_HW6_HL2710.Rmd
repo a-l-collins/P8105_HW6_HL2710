@@ -2,29 +2,91 @@
 title: "Homework 6"
 author: "Ainsel Levitskaia-Collins, HL2710"
 date: "2025-11-22"
-output: html_document
+output: github_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r include = FALSE}
+library(tidyverse)
+library(p8105.datasets)
+data("weather_df")
 ```
 
-## R Markdown
+### Problem 2
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+#### Bootstrapping
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Function for sampling for bootstrapping:
 
-```{r cars}
-summary(cars)
+```{r}
+#' Sample for Bootstrapping
+#'
+#' @param df Dataframe to sample from
+#'
+#' @returns A sample selected with replacement for bootstrapping
+boot_sample = function(df) {
+  sample_frac(df, replace = TRUE)
+}
 ```
 
-## Including Plots
+Tidying and pulling bootstrap samples from `weather_df`:
 
-You can also embed plots, for example:
+```{r}
+weather_df <- weather_df %>% 
+  janitor::clean_names()
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+weather_bootstrap <- tibble(strap_number = 1:5000) %>% 
+  mutate(
+    strap_sample = map(strap_number, \(i) boot_sample(df = weather_df))
+  )
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Creating a variable for $\frac{\hat{\beta}_{1}}{\hat{\beta}_{2}}$:
+
+```{r}
+weather_bs_betas <- weather_bootstrap %>% 
+  mutate(
+    models = map(strap_sample, \(df) lm(tmax ~ tmin + prcp, data = df)),
+    results = map(models, broom::tidy)
+  ) %>% 
+  select(-strap_sample, -models) %>% 
+  unnest(results) %>% 
+  select(strap_number, term, estimate) %>% 
+  pivot_wider(
+    names_from = term,
+    values_from = estimate
+  ) %>% 
+  mutate(ratio = tmin / prcp)
+
+head(weather_bs_betas)
+```
+
+Collecting $\hat{r}^{2}$ data:
+
+```{r}
+weather_bs_rsquared <- weather_bootstrap %>% 
+  mutate(
+    models = map(strap_sample, \(df) lm(tmax ~ tmin + prcp, data = df)),
+    results = map(models, broom::glance)
+  ) %>% 
+  select(-strap_sample, -models) %>% 
+  unnest(results)
+
+head(weather_bs_rsquared)
+```
+
+Merging the two `weather_bs` datasets, so that all the information is in one place:
+
+```{r}
+weather_bs <- merge(weather_bs_betas, weather_bs_rsquared, by = "strap_number") %>% 
+  select(strap_number, ratio, r.squared)
+
+head(weather_bs)
+```
+
+#### Plot
+
+- distribution of estimates
+- describe these in words
+- ID 2.5% and 97.5% quantiles to provide a 95% CI for r^2 and b1/b2
+
+### Problem 3
