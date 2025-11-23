@@ -55,7 +55,7 @@ weather_bs_betas <- weather_bootstrap %>%
     names_from = term,
     values_from = estimate
   ) %>% 
-  mutate(ratio = tmin / prcp)
+  mutate(beta_ratio = tmin / prcp)
 
 head(weather_bs_betas)
 ```
@@ -78,15 +78,38 @@ Merging the two `weather_bs` datasets, so that all the information is in one pla
 
 ```{r}
 weather_bs <- merge(weather_bs_betas, weather_bs_rsquared, by = "strap_number") %>% 
-  select(strap_number, ratio, r.squared)
+  select(strap_number, beta_ratio, r.squared)
 
 head(weather_bs)
 ```
 
-#### Plot
+#### Plot of the ratio of betas vs r-squared
 
-- distribution of estimates
-- describe these in words
-- ID 2.5% and 97.5% quantiles to provide a 95% CI for r^2 and b1/b2
+```{r message = FALSE}
+plot_weather_estimates <- weather_bs %>% 
+  ggplot(aes(x = beta_ratio, y = r.squared)) +
+  geom_point() +
+  geom_smooth(method = lm, se = FALSE) +
+  theme_minimal() +
+  xlab("Ratio of beta(minimum temperature) to beta(precipitation)") +
+  ylab("R-squared")
+
+plot_weather_estimates
+```
+
+As the ratio between the minimum temperature $\hat{\beta}_{1}$ and precipitation $\hat{\beta}_{2}$ decreases, the $\hat{r}^{2}$ value tends to increase.
+
+#### Confidence Interval
+
+```{r}
+weather_bs_ci <- tibble(
+  beta_ratio = quantile(pull(weather_bs, beta_ratio), probs = c(0.025, 0.975)),
+  r_squared = quantile(pull(weather_bs, r.squared), probs = c(0.025, 0.975))
+)
+```
+
+The 95% confidence interval for $\hat{r}^{2}$ is (`r round(pull(weather_bs_ci, r_squared)[[1]], digits = 2)`, `r round(pull(weather_bs_ci, r_squared)[[2]], digits = 2)`). The 95% confidence interval for $\frac{\hat{\beta}_{1}}{\hat{\beta}_{2}}$ is (`r round(pull(weather_bs_ci, beta_ratio)[[1]], digits = 1)`, `r round(pull(weather_bs_ci, beta_ratio)[[2]], digits = 1)`).
+
+
 
 ### Problem 3
