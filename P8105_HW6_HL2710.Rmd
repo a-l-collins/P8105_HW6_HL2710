@@ -113,3 +113,55 @@ The 95% confidence interval for $\hat{r}^{2}$ is (`r round(pull(weather_bs_ci, r
 
 
 ### Problem 3
+
+Load and clean `birthweight` dataset, including renaming variables to something less confusing and lightly reorganizing the variable order:
+
+```{r message = FALSE}
+birthweight <- read_csv("./data/birthweight.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    babysex = case_match(babysex,
+                         1 ~ "Male",
+                         2 ~ "Female"),
+    frace = case_match(frace,
+                       1 ~ "White",
+                       2 ~ "Black",
+                       3 ~ "Asian",
+                       4 ~ "Puerto Rican",
+                       8 ~ "Other",
+                       9 ~ "Unknown"),
+    mrace = case_match(mrace,
+                       1 ~ "White",
+                       2 ~ "Black",
+                       3 ~ "Asian",
+                       4 ~ "Puerto Rican",
+                       8 ~ "Other")) %>% 
+  rename(
+    b_sex = babysex, 
+    b_head_cents = bhead, 
+    b_length_cents = blength, 
+    b_weight_grams = bwt, 
+    del_weight_lbs = delwt, 
+    fam_income_hunds = fincome, 
+    f_race = frace, 
+    b_gweeks = gaweeks, 
+    b_malform = malform,
+    m_menarche_yrs = menarche, 
+    m_height_ins = mheight, 
+    m_age_yrs = momage, 
+    m_race = mrace, 
+    num_parity = parity, 
+    num_lbw = pnumlbw, 
+    num_sga = pnumsga, 
+    m_ppbmi = ppbmi, 
+    m_ppweight_lbs = ppwt, 
+    m_cigs = smoken, 
+    m_wtgain_lbs = wtgain) %>% 
+  select(b_sex, b_head_cents, b_length_cents, b_weight_grams, b_gweeks, 
+         b_malform, del_weight_lbs, fam_income_hunds, f_race, m_menarche_yrs, 
+         m_height_ins, m_age_yrs, m_race, m_ppbmi, m_ppweight_lbs, m_cigs, 
+         m_wtgain_lbs, num_parity, num_lbw, num_sga)
+
+head(birthweight)
+```
+
