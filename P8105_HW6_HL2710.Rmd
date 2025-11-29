@@ -114,7 +114,7 @@ The 95% confidence interval for $\hat{r}^{2}$ is (`r round(pull(weather_bs_ci, r
 
 ### Problem 3
 
-Load and clean `birthweight` dataset, including renaming variables to something less confusing and lightly reorganizing the variable order:
+Loading and cleaning `birthweight` dataset, including renaming variables to something less confusing and lightly reorganizing the variable order:
 
 ```{r message = FALSE}
 birthweight <- read_csv("./data/birthweight.csv") %>% 
@@ -165,3 +165,49 @@ birthweight <- read_csv("./data/birthweight.csv") %>%
 head(birthweight)
 ```
 
+#### My model; comparing birth weight against the mother's pre-pregnancy BMI and cigarettes smoked during pregnancy
+
+This model is based on the theory that a mother of poor health (either too low or too high of a BMI, and smoking during pregnancy) will contribute to the potential of a baby's birth weight being unusual.
+
+Fitting the model:
+
+```{r}
+birthweight_model1 <- lm(b_weight_grams ~ m_ppbmi + m_cigs, data = birthweight)
+
+birthweight_model1 %>% 
+  broom::tidy() %>% 
+  mutate(term = case_match(term,
+                           "(Intercept)" ~ "Intercept",
+                           "m_ppbmi" ~ "Pre-Pregnancy BMI",
+                           "m_cigs" ~ "Cigarettes Smoked During Pregnancy")) %>% 
+  knitr::kable(digits = 2, col.names = c("Term", "Estimate", "Standard Error", "Statistic", "P-Value"))
+```
+
+Testing model fit using residuals:
+
+```{r}
+birthweight_model1_rplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model1) %>% 
+  ggplot(aes(x = b_weight_grams, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Birth Weight (grams)") +
+  ylab("Residuals")
+
+birthweight_model1_rplot
+```
+
+```{r}
+birthweight_model1_rpplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model1) %>% 
+  modelr::add_predictions(birthweight_model1) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Predicted") +
+  ylab("Residuals")
+
+birthweight_model1_rpplot
+```
+
+This model standing alone looks like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals follow a very linear path with few outliers, and when compared against predicted values, the shape of the residuals plot is generally symmetrical and clustered at the center of the plot with no clear pattern.
