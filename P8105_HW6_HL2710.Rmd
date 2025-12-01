@@ -183,9 +183,9 @@ birthweight_model1 %>%
   knitr::kable(digits = 2, col.names = c("Term", "Estimate", "Standard Error", "Statistic", "P-Value"))
 ```
 
-Testing model fit using residuals:
+Testing model fit:
 
-```{r}
+```{r model1, fig.show = "hold", out.width = "50%"}
 birthweight_model1_rplot <- birthweight %>% 
   modelr::add_residuals(birthweight_model1) %>% 
   ggplot(aes(x = b_weight_grams, y = resid)) +
@@ -195,9 +195,7 @@ birthweight_model1_rplot <- birthweight %>%
   ylab("Residuals")
 
 birthweight_model1_rplot
-```
 
-```{r}
 birthweight_model1_rpplot <- birthweight %>% 
   modelr::add_residuals(birthweight_model1) %>% 
   modelr::add_predictions(birthweight_model1) %>% 
@@ -210,4 +208,47 @@ birthweight_model1_rpplot <- birthweight %>%
 birthweight_model1_rpplot
 ```
 
-This model standing alone looks like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals follow a very linear path with few outliers, and when compared against predicted values, the shape of the residuals plot is generally symmetrical and clustered at the center of the plot with no clear pattern.
+This model, when considered independently, looks like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals follow a very linear path with few outliers. When compared against predicted values, the shape of the residuals plot is generally symmetrical and clustered at the center of the plot with no clear pattern.
+
+#### Test Model 1: birthweight compared against length at birth and gestational age (no interaction)
+
+Fitting the model:
+
+```{r}
+birthweight_model2 <- lm(b_weight_grams ~ b_length_cents + b_gweeks, data = birthweight)
+
+birthweight_model2 %>% 
+  broom::tidy() %>% 
+  mutate(term = case_match(term,
+                           "(Intercept)" ~ "Intercept",
+                           "b_length_cents" ~ "Length at Birth (centimeters)",
+                           "b_gweeks" ~ "Gestational Weeks")) %>% 
+  knitr::kable(digits = 2, col.names = c("Term", "Estimate", "Standard Error", "Statistic", "P-Value"))
+```
+
+Testing the model fit:
+
+```{r model2, fig.show = "hold", out.width = "50%"}
+birthweight_model2_rplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model2) %>% 
+  ggplot(aes(x = b_weight_grams, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Birth Weight (grams)") +
+  ylab("Residuals")
+
+birthweight_model2_rplot
+
+birthweight_model2_rpplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model2) %>% 
+  modelr::add_predictions(birthweight_model2) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Predicted") +
+  ylab("Residuals")
+
+birthweight_model2_rpplot
+```
+
+This model, when considered independently, does not look like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals do not follow a perfect linear path and see some spread. When compared against predicted values, the residuals cluster off-center, with a few notable outliers.
