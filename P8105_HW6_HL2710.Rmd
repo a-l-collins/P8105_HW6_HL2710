@@ -252,3 +252,92 @@ birthweight_model2_rpplot
 ```
 
 This model, when considered independently, does not look like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals do not follow a perfect linear path and see some spread. When compared against predicted values, the residuals cluster off-center, with a few notable outliers.
+
+### Test model 2: birthweight compared against head circumference, length, and sex (with interaction)
+
+Fitting the model:
+
+```{r}
+birthweight_model3 <- lm(b_weight_grams ~ b_head_cents * b_length_cents * b_sex, data = birthweight)
+
+birthweight_model3 %>% 
+  broom::tidy() %>% 
+  mutate(term = case_match(term,
+                           "(Intercept)" ~ "Intercept",
+                           "b_head_cents" ~ "Head Circumference at Birth (centimeters)",
+                           "b_length_cents" ~ "Length at Birth (Centimeters)",
+                           "b_sexMale" ~ "Gender (Male)",
+                           "b_head_cents:b_length_cents" ~ "Head Circumference x Length",
+                           "b_head_cents:b_sexMale" ~ "Head Circumference x Gender (Male)",
+                           "b_length_cents:b_sexMale" ~ "Length x Gender (Male)",
+                           "b_head_cents:b_length_cents:b_sexMale" ~ "Head Circumference x Length x Gender (Male)")) %>% 
+  knitr::kable(digits = 2, col.names = c("Term", "Estimate", "Standard Error", "Statistic", "P-Value"))
+```
+
+Testing the model fit:
+
+```{r model3, fig.show = "hold", out.width = "50%"}
+birthweight_model3_rplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model3) %>% 
+  ggplot(aes(x = b_weight_grams, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Birth Weight (grams)") +
+  ylab("Residuals")
+
+birthweight_model3_rplot
+
+birthweight_model3_rpplot <- birthweight %>% 
+  modelr::add_residuals(birthweight_model3) %>% 
+  modelr::add_predictions(birthweight_model3) %>% 
+  ggplot(aes(x = pred, y = resid)) +
+  geom_point(alpha = 0.5, shape = 1) +
+  theme_minimal() +
+  xlab("Predicted") +
+  ylab("Residuals")
+
+birthweight_model3_rpplot
+```
+
+This model, when considered independently, does not look like a good fit for the data; when comparing the residuals against the birth weight variable, the residuals do not follow a perfect linear path and see some spread. When compared against predicted values, the residuals cluster off-center, with a few notable outliers. This fit overall reseambles the fit of test model 1.
+
+#### Comparing All Models
+
+Fitting models and obtaining RMSEs:
+
+```{r}
+birthweight_cv_df <- modelr::crossv_mc(birthweight, 100) %>% 
+  mutate(
+    model_mine = map(train, \(df) lm(b_weight_grams ~ m_ppbmi + m_cigs, data = df)),
+    model_test1 = map(train, \(df) lm(b_weight_grams ~ b_length_cents + b_gweeks, data = df)),
+    model_test2 = map(train, \(df) lm(b_weight_grams ~ b_head_cents * b_length_cents * b_sex, data = df))
+  ) %>% 
+  mutate(
+    rmse_mine = map2_dbl(model_mine, test, \(mod, df) modelr::rmse(model = mod, data = df)),
+    rmse_test1 = map2_dbl(model_test1, test, \(mod, df) modelr::rmse(model = mod, data = df)),
+    rmse_test2 = map2_dbl(model_test2, test, \(mod, df) modelr::rmse(model = mod, data = df))
+  )
+```
+
+Testing model fits:
+
+```{r}
+plot_bw_cv <- birthweight_cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model",
+    values_to = "rmse",
+    names_prefix = "rmse_"
+  ) %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) +
+  geom_violin() +
+  theme_minimal() +
+  xlab("Model") +
+  ylab("RMSE")
+
+plot_bw_cv
+```
+
+Based on this model comparison, the test 2 model (comparing head circumference, length, and sex with interaction) is the best fit for the data, as its range of RMSE values is the lowest out of all available values.
