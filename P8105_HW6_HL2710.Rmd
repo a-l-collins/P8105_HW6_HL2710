@@ -40,7 +40,7 @@ weather_bootstrap <- tibble(strap_number = 1:5000) %>%
   )
 ```
 
-Creating a variable for $\frac{\hat{\beta}_{1}}{\hat{\beta}_{2}}$:
+Creating a variable for $\frac{\hat{\beta}_ {1}}{\hat{\beta}_ {2}}$:
 
 ```{r}
 weather_bs_betas <- weather_bootstrap %>% 
@@ -97,7 +97,7 @@ plot_weather_estimates <- weather_bs %>%
 plot_weather_estimates
 ```
 
-As the ratio between the minimum temperature $\hat{\beta}_{1}$ and precipitation $\hat{\beta}_{2}$ decreases, the $\hat{r}^{2}$ value tends to increase.
+As the ratio between the minimum temperature $\hat{\beta}_ {1}$ and precipitation $\hat{\beta}_ {2}$ decreases, the $\hat{r}^{2}$ value tends to increase.
 
 #### Confidence Interval
 
@@ -108,7 +108,7 @@ weather_bs_ci <- tibble(
 )
 ```
 
-The 95% confidence interval for $\hat{r}^{2}$ is (`r round(pull(weather_bs_ci, r_squared)[[1]], digits = 2)`, `r round(pull(weather_bs_ci, r_squared)[[2]], digits = 2)`). The 95% confidence interval for $\frac{\hat{\beta}_{1}}{\hat{\beta}_{2}}$ is (`r round(pull(weather_bs_ci, beta_ratio)[[1]], digits = 1)`, `r round(pull(weather_bs_ci, beta_ratio)[[2]], digits = 1)`).
+The 95% confidence interval for $\hat{r}^{2}$ is (`r round(pull(weather_bs_ci, r_squared)[[1]], digits = 2)`, `r round(pull(weather_bs_ci, r_squared)[[2]], digits = 2)`). The 95% confidence interval for $\frac{\hat{\beta}_ {1}}{\hat{\beta}_ {2}}$ is (`r round(pull(weather_bs_ci, beta_ratio)[[1]], digits = 1)`, `r round(pull(weather_bs_ci, beta_ratio)[[2]], digits = 1)`).
 
 
 
